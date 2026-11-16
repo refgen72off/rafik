@@ -80,6 +80,21 @@ function sliceRange(points, rangeId, lastDate) {
 
 const seriesPoints = (points) => points.map(([date, value]) => ({ x: `${date}T00:00:00`, y: value }));
 
+const ts = (iso) => new Date(`${iso}T00:00:00`).getTime();
+
+// Границы, за которые зум/сдвиг не выходят: только даты из текущего ряда.
+function applyZoomLimits(chart, points) {
+  const plugin = chart.options.plugins?.zoom;
+  if (!plugin) return;
+  plugin.limits = {
+    x: {
+      min: ts(points[0][0]),
+      max: ts(points[points.length - 1][0]),
+      minRange: 3 * 86400000,
+    },
+  };
+}
+
 // ---------- графики ----------
 
 function tooltipPlugin(unit) {
@@ -98,8 +113,13 @@ function tooltipPlugin(unit) {
   };
 }
 
-function createDetailChart(canvas, points, unit = '₽') {
+function createDetailChart(canvas, points, { unit = '₽', resetButton = null } = {}) {
   const ctx = canvas.getContext('2d');
+  let chart = null;
+
+  const syncReset = () => {
+    if (resetButton) resetButton.hidden = !chart?.isZoomedOrPanned();
+  };
 
   const fill = (c) => {
     const { chartArea } = c.chart;
@@ -110,7 +130,7 @@ function createDetailChart(canvas, points, unit = '₽') {
     return g;
   };
 
-  return new Chart(ctx, {
+  chart = new Chart(ctx, {
     type: 'line',
     data: {
       datasets: [
@@ -140,6 +160,18 @@ function createDetailChart(canvas, points, unit = '₽') {
       plugins: {
         legend: { display: false },
         tooltip: tooltipPlugin(unit),
+        zoom: {
+          pan: { enabled: true, mode: 'x', threshold: 6, onPanComplete: syncReset },
+          zoom: {
+            wheel: { enabled: true, speed: 0.08 },
+            pinch: { enabled: true },
+            mode: 'x',
+            onZoomComplete: syncReset,
+          },
+          limits: {
+            x: { min: ts(points[0][0]), max: ts(points[points.length - 1][0]), minRange: 3 * 86400000 },
+          },
+        },
       },
       scales: {
         x: {
@@ -166,6 +198,14 @@ function createDetailChart(canvas, points, unit = '₽') {
       },
     },
   });
+
+  chart.syncReset = syncReset;
+  resetButton?.addEventListener('click', () => {
+    chart.resetZoom();
+    syncReset();
+  });
+
+  return chart;
 }
 
 function updateDetailChart(chart, points, unit = '₽') {
@@ -174,7 +214,10 @@ function updateDetailChart(chart, points, unit = '₽') {
   chart.options.scales.x.time.unit = tickUnit(days);
   chart.options.scales.x.ticks.callback = tickFormatter(days);
   chart.options.plugins.tooltip = tooltipPlugin(unit);
-  chart.update();
+  applyZoomLimits(chart, points);
+  chart.update('none');
+  chart.resetZoom('none');
+  chart.syncReset?.();
 }
 
 function createSpark(canvas) {
@@ -242,6 +285,7 @@ async function initCurrency() {
   const errorEl = document.getElementById('usd-error');
   const canvas = document.getElementById('usd-chart');
   const rangesEl = document.getElementById('usd-ranges');
+  const resetButton = document.getElementById('usd-reset');
   const updatedEl = document.getElementById('updated-fx');
 
   let data;
@@ -269,7 +313,7 @@ async function initCurrency() {
     const points = sliceRange(all, range, lastDate);
     renderStats(statsEl, points);
     metaEl.textContent = `ЦБ РФ · ${shortDate(points[0][0])} — ${shortDate(points[points.length - 1][0])}`;
-    if (!chart) chart = createDetailChart(canvas, points);
+    if (!chart) chart = createDetailChart(canvas, points, { resetButton });
     else updateDetailChart(chart, points);
   };
 
@@ -289,6 +333,7 @@ async function initStocks() {
   const errorEl = document.getElementById('stocks-error');
   const canvas = document.getElementById('stock-chart');
   const rangesEl = document.getElementById('stocks-ranges');
+  const resetButton = document.getElementById('stock-reset');
   const tilesEl = document.getElementById('stock-tiles');
   const updatedEl = document.getElementById('updated-stocks');
 
@@ -377,7 +422,7 @@ async function initStocks() {
     renderStats(statsEl, points);
     metaEl.textContent = `${selected} · Мосбиржа · ${shortDate(points[0][0])} — ${shortDate(points[points.length - 1][0])}`;
 
-    if (!chart) chart = createDetailChart(canvas, points);
+    if (!chart) chart = createDetailChart(canvas, points, { resetButton });
     else updateDetailChart(chart, points);
   };
 

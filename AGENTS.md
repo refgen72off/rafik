@@ -12,6 +12,8 @@ branch), поэтому пуш в `main` = деплой через 1–2 мин�
 - `app.js` — вся логика. `RANGES` — общий список периодов для всех карточек; `createDetailChart`
   + `updateDetailChart` — большой график, `createSpark` — миниатюра в плитке, `createRanges` —
   кнопки периодов, `renderStats` — изменение/мин/макс, `initCurrency` и `initStocks` — карточки.
+  Масштаб и сдвиг графика — `chartjs-plugin-zoom` (настройки в `plugins.zoom` внутри
+  `createDetailChart`), границы — `applyZoomLimits`, сброс — кнопка `.chart-reset`.
 - `styles.css` — тёмная тема; ключевые классы `.card`, `.stocks-body` (сетка «график + колонка
   плиток»), `.tiles`, `.tile`, `.spark`, `.stats`. Страница прижата к левому краю окна:
   `.wrap { margin: 0 }`.
@@ -61,6 +63,12 @@ branch), поэтому пуш в `main` = деплой через 1–2 мин�
   ось `type: 'time'`). При смене версии проверять обе ссылки в `index.html`.
 - **Воркфлоу**: каждый источник — отдельный шаг с `continue-on-error: true`, чтобы падение MOEX
   не отменяло обновление курсов ЦБ.
+- **Зум/пан**: `chartjs-plugin-zoom` требует `hammerjs` (без Hammer панорамирование молча
+  не работает, колесо — работает). Hammer слушает `PointerEvent` на `window`, поэтому проверка
+  в браузере делается `PointerEvent`-ами (`pointerdown` на canvas, `pointermove` на `window`),
+  а не `MouseEvent` — синтетические mouse-события он игнорирует. `limits` держат окно внутри
+  текущего ряда, поэтому до увеличения сдвигать нечего: пан включается после зума.
+  Смена периода (`createRanges`) пересоздаёт границы и сбрасывает масштаб.
 
 ## Локальный запуск
 

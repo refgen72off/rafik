@@ -5,13 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
   <title>Рафики</title>
-  <link rel="stylesheet" href="styles.css?v=4">
+  <link rel="stylesheet" href="styles.css?v=5">
 </head>
 <body>
   <main class="wrap">
     <header class="head">
       <h1>Рафики</h1>
-      <p class="sub">Личная страница. Данные: ЦБ РФ и Московская биржа, обновление раз в день.</p>
+      <p class="sub">Личная страница. Данные: ЦБ РФ и Московская биржа, обновление раз в день.
+        Колесо мыши — масштаб графика, перетаскивание — сдвиг по времени.</p>
     </header>
 
     <section class="card" aria-labelledby="usd-title">
@@ -28,6 +29,7 @@
       <div class="chart-box">
         <canvas id="usd-chart" aria-label="График курса доллара к рублю" role="img"></canvas>
         <p class="chart-error" id="usd-error" hidden></p>
+        <button type="button" class="chart-reset" id="usd-reset" hidden>Сброс масштаба</button>
       </div>
 
       <dl class="stats" id="usd-stats"></dl>
@@ -50,6 +52,7 @@
           <div class="chart-box">
             <canvas id="stock-chart" aria-label="График цены акции" role="img"></canvas>
             <p class="chart-error" id="stocks-error" hidden></p>
+            <button type="button" class="chart-reset" id="stock-reset" hidden>Сброс масштаба</button>
           </div>
 
           <dl class="stats" id="stock-stats"></dl>
@@ -68,6 +71,8 @@
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
-  <script src="app.js?v=4"></script>
+  <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.2.0/dist/chartjs-plugin-zoom.min.js"></script>
+  <script src="app.js?v=5"></script>
 </body>
 </html>
