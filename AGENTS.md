@@ -12,7 +12,9 @@ branch), поэтому пуш в `main` = деплой через 1–2 мин�
 - `app.js` — вся логика. `RANGES` — общий список периодов для всех карточек; `createDetailChart`
   + `updateDetailChart` — большой график, `createSpark` — миниатюра в плитке, `createRanges` —
   кнопки периодов, `renderStats` — изменение/мин/макс, `initCurrency` и `initStocks` — карточки.
-- `styles.css` — тёмная тема; ключевые классы `.card`, `.tiles`, `.tile`, `.spark`, `.stats`.
+- `styles.css` — тёмная тема; ключевые классы `.card`, `.stocks-body` (сетка «график + колонка
+  плиток»), `.tiles`, `.tile`, `.spark`, `.stats`. Страница прижата к левому краю окна:
+  `.wrap { margin: 0 }`.
 - `data/rates.json`, `data/stocks.json` — сгенерированные ряды, руками не править.
 - `scripts/fetch-rates.mjs` (ЦБ РФ), `scripts/fetch-stocks.mjs` (MOEX ISS),
   `.github/workflows/update-rates.yml` — ежедневный крон 14:40 UTC.
