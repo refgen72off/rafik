@@ -462,6 +462,9 @@ function initDesk() {
   const isDesktop = () => window.matchMedia('(min-width: 901px)').matches;
 
   let layout = loadLayout();
+  const hasSavedLayout = () => !!layout && Object.keys(layout).length > 0;
+  let custom = hasSavedLayout();
+  let lastWidth = -1;
   let zTop = 1;
 
   const defaultLayout = () => {
@@ -516,10 +519,13 @@ function initDesk() {
 
   const render = () => {
     if (!isDesktop()) return;
+    // пока пользователь не двигал окна, раскладка следует за шириной экрана
+    if (!custom) layout = defaultLayout();
     clampAll();
     for (const panel of panels) place(panel, layout[panel.dataset.panel]);
     fitDesk();
     if (resetBtn) resetBtn.hidden = false;
+    lastWidth = desk.clientWidth;
   };
 
   layout = layout ?? defaultLayout();
@@ -533,6 +539,16 @@ function initDesk() {
       chart.draw();
     }
   };
+
+  // Ширина «стола» меняется, когда появляется вертикальный скроллбар или двигается окно:
+  // раскладка по умолчанию подстраивается, пользовательская — только поджимается.
+  const deskObserver = new ResizeObserver(() => {
+    if (!isDesktop()) return;
+    if (Math.abs(desk.clientWidth - lastWidth) < 1) return;
+    render();
+    resizeCharts();
+  });
+  deskObserver.observe(desk);
 
   const beginMove = (panel, mode, event) => {
     if (!isDesktop() || event.button !== 0) return;
@@ -572,6 +588,7 @@ function initDesk() {
       document.body.classList.remove('is-moving');
       document.body.style.cursor = '';
       delete panel.dataset.active;
+      custom = true;
       saveLayout(layout);
       resizeCharts();
     };
@@ -597,6 +614,7 @@ function initDesk() {
   }
 
   resetBtn?.addEventListener('click', () => {
+    custom = false;
     layout = defaultLayout();
     try {
       localStorage.removeItem(LAYOUT_KEY);
@@ -614,11 +632,16 @@ function initDesk() {
       return;
     }
     render();
+    resizeCharts();
   });
 }
 
 // ---------- запуск ----------
 
-initCurrency();
-initStocks();
 initDesk();
+
+// Отрисовка графиков меняет высоту страницы, из-за чего появляется вертикальный
+// скроллбар и «стол» становится уже — пересчитываем раскладку после загрузки данных.
+Promise.allSettled([initCurrency(), initStocks()]).then(() => {
+  window.dispatchEvent(new Event('resize'));
+});
