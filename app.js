@@ -273,7 +273,7 @@ async function initCurrency() {
     else updateDetailChart(chart, points);
   };
 
-  valueEl.textContent = `${priceText(all[all.length - 1][1])} ₽`;
+  valueEl.textContent = `${num(all[all.length - 1][1], 4)} ₽`;
   if (updatedEl && data.updated) updatedEl.textContent = longDate(data.updated);
   createRanges(rangesEl, DEFAULT_RANGE, draw);
   draw(DEFAULT_RANGE);
