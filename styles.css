@@ -156,35 +156,6 @@ body {
   text-align: center;
 }
 
-.stats {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
-  margin: 16px 0 0;
-  padding: 0;
-}
-
-.stats div {
-  padding: 12px 14px;
-  background: rgba(255, 255, 255, 0.025);
-  border: 1px solid var(--card-border);
-  border-radius: 12px;
-}
-
-.stats dt {
-  margin: 0 0 4px;
-  color: var(--muted);
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.stats dd {
-  margin: 0;
-  font-size: 17px;
-  font-variant-numeric: tabular-nums;
-}
-
 .positive { color: var(--up); }
 .negative { color: var(--down); }
 
@@ -252,13 +223,8 @@ body {
   touch-action: none;
 }
 
-.panel > .ranges,
-.panel > .stats {
+.panel > .ranges {
   flex: none;
-}
-
-.panel > .stats {
-  margin-top: 14px;
 }
 
 .panel > .chart-box {
@@ -454,5 +420,4 @@ body.is-moving * {
   .value { font-size: 26px; }
   .panel > .chart-box,
   .stocks-body > .chart-box { height: 300px; }
-  .stats { grid-template-columns: 1fr; }
 }

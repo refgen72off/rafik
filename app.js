@@ -235,24 +235,6 @@ function createSpark(canvas) {
   });
 }
 
-// ---------- статистика ----------
-
-function renderStats(container, points, unit = '₽') {
-  const first = points[0];
-  const last = points[points.length - 1];
-  const values = points.map(([, v]) => v);
-  const diff = last[1] - first[1];
-  const pct = first[1] ? (diff / first[1]) * 100 : 0;
-  const sign = diff > 0 ? '+' : diff < 0 ? '−' : '';
-  const cls = diff > 0 ? 'positive' : diff < 0 ? 'negative' : '';
-
-  container.innerHTML = `
-    <div><dt>Изменение за период</dt><dd class="${cls}">${sign}${priceText(Math.abs(diff))} ${unit} · ${sign}${num(Math.abs(pct), 1)} %</dd></div>
-    <div><dt>Минимум</dt><dd>${priceText(Math.min(...values))} ${unit}</dd></div>
-    <div><dt>Максимум</dt><dd>${priceText(Math.max(...values))} ${unit}</dd></div>
-  `;
-}
-
 // ---------- переключатель периодов ----------
 
 function createRanges(container, initial, onChange) {
@@ -281,7 +263,6 @@ function createRanges(container, initial, onChange) {
 async function initCurrency() {
   const metaEl = document.getElementById('usd-meta');
   const valueEl = document.getElementById('usd-value');
-  const statsEl = document.getElementById('usd-stats');
   const errorEl = document.getElementById('usd-error');
   const canvas = document.getElementById('usd-chart');
   const rangesEl = document.getElementById('usd-ranges');
@@ -311,7 +292,6 @@ async function initCurrency() {
 
   const draw = (range) => {
     const points = sliceRange(all, range, lastDate);
-    renderStats(statsEl, points);
     metaEl.textContent = `ЦБ РФ · ${shortDate(points[0][0])} — ${shortDate(points[points.length - 1][0])}`;
     if (!chart) chart = createDetailChart(canvas, points, { resetButton });
     else updateDetailChart(chart, points);
