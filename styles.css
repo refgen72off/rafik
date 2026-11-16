@@ -68,6 +68,15 @@ body {
   font-weight: 600;
 }
 
+.eyebrow {
+  margin: 0 0 4px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
 .meta {
   margin: 4px 0 0;
   color: var(--muted);
@@ -164,6 +173,72 @@ body {
 }
 
 .foot a { color: var(--muted); }
+
+/* плитки бумаг */
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px 12px;
+  font: inherit;
+  text-align: left;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.025);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, transform 0.15s;
+}
+
+.tile:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.tile[aria-pressed="true"] {
+  border-color: rgba(91, 157, 255, 0.6);
+  background: var(--accent-soft);
+}
+
+.tile-name {
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tile-ticker {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.spark {
+  display: block;
+  position: relative;
+  height: 36px;
+  margin: 6px 0 4px;
+}
+
+.tile-price {
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tile-change {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
 
 @media (max-width: 620px) {
   .wrap { padding-top: 26px; }

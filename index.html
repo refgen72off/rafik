@@ -11,7 +11,7 @@
   <main class="wrap">
     <header class="head">
       <h1>Графики</h1>
-      <p class="sub">Личная страница. Данные: официальные курсы ЦБ РФ, обновление раз в день.</p>
+      <p class="sub">Личная страница. Данные: ЦБ РФ и Московская биржа, обновление раз в день.</p>
     </header>
 
     <section class="card" aria-labelledby="usd-title">
@@ -33,9 +33,32 @@
       <dl class="stats" id="usd-stats"></dl>
     </section>
 
+    <section class="card" aria-labelledby="stocks-title">
+      <div class="card-head">
+        <div class="card-title">
+          <p class="eyebrow" id="stocks-title">Акции</p>
+          <h2 id="stock-name">загрузка…</h2>
+          <p class="meta" id="stocks-meta">—</p>
+        </div>
+        <div class="value" id="stock-value">—</div>
+      </div>
+
+      <div class="ranges" id="stocks-ranges" role="group" aria-label="Период"></div>
+
+      <div class="chart-box">
+        <canvas id="stock-chart" aria-label="График цены акции" role="img"></canvas>
+        <p class="chart-error" id="stocks-error" hidden></p>
+      </div>
+
+      <dl class="stats" id="stock-stats"></dl>
+
+      <div class="tiles" id="stock-tiles" role="group" aria-label="Выбор бумаги"></div>
+    </section>
+
     <footer class="foot">
-      Источник: <a href="https://www.cbr.ru/currency_base/dynamics/" rel="noopener">ЦБ РФ</a>.
-      Последнее обновление данных: <span id="updated">—</span>
+      Источники: <a href="https://www.cbr.ru/currency_base/dynamics/" rel="noopener">ЦБ РФ</a> (валюты),
+      <a href="https://www.moex.com/" rel="noopener">Мосбиржа</a> (акции).
+      Обновлено: валюты — <span id="updated-fx">—</span>, акции — <span id="updated-stocks">—</span>
     </footer>
   </main>
 
