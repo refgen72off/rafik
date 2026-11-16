@@ -5,62 +5,68 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
   <title>Рафики</title>
-  <link rel="stylesheet" href="styles.css?v=5">
+  <link rel="stylesheet" href="styles.css?v=6">
 </head>
 <body>
   <main class="wrap">
     <header class="head">
-      <h1>Рафики</h1>
-      <p class="sub">Личная страница. Данные: ЦБ РФ и Московская биржа, обновление раз в день.
-        Колесо мыши — масштаб графика, перетаскивание — сдвиг по времени.</p>
+      <div class="head-main">
+        <h1>Рафики</h1>
+        <p class="sub">Личная страница. Данные: ЦБ РФ и Московская биржа, обновление раз в день.
+          Колесо мыши — масштаб графика, перетаскивание внутри графика — сдвиг по времени,
+          за заголовок окна — перемещение, за край или угол — размер.</p>
+      </div>
+      <button type="button" class="ghost" id="layout-reset" hidden>Сбросить раскладку</button>
     </header>
 
-    <section class="card" aria-labelledby="usd-title">
-      <div class="card-head">
-        <div class="card-title">
-          <h2 id="usd-title">Доллар США / рубль</h2>
-          <p class="meta" id="usd-meta">загрузка…</p>
+    <div class="desk" id="desk">
+      <section class="card panel" id="panel-fx" data-panel="fx" aria-labelledby="usd-title">
+        <div class="card-head" data-drag>
+          <div class="card-title">
+            <h2 id="usd-title">Доллар США / рубль</h2>
+            <p class="meta" id="usd-meta">загрузка…</p>
+          </div>
+          <div class="value" id="usd-value">—</div>
         </div>
-        <div class="value" id="usd-value">—</div>
-      </div>
 
-      <div class="ranges" id="usd-ranges" role="group" aria-label="Период"></div>
+        <div class="ranges" id="usd-ranges" role="group" aria-label="Период"></div>
 
-      <div class="chart-box">
-        <canvas id="usd-chart" aria-label="График курса доллара к рублю" role="img"></canvas>
-        <p class="chart-error" id="usd-error" hidden></p>
-        <button type="button" class="chart-reset" id="usd-reset" hidden>Сброс масштаба</button>
-      </div>
-
-      <dl class="stats" id="usd-stats"></dl>
-    </section>
-
-    <section class="card" aria-labelledby="stocks-title">
-      <div class="card-head">
-        <div class="card-title">
-          <p class="eyebrow" id="stocks-title">Акции</p>
-          <h2 id="stock-name">загрузка…</h2>
-          <p class="meta" id="stocks-meta">—</p>
+        <div class="chart-box">
+          <canvas id="usd-chart" aria-label="График курса доллара к рублю" role="img"></canvas>
+          <p class="chart-error" id="usd-error" hidden></p>
+          <button type="button" class="chart-reset" id="usd-reset" hidden>Сброс масштаба</button>
         </div>
-        <div class="value" id="stock-value">—</div>
-      </div>
 
-      <div class="ranges" id="stocks-ranges" role="group" aria-label="Период"></div>
+        <dl class="stats" id="usd-stats"></dl>
+      </section>
 
-      <div class="stocks-body">
-        <div class="stock-main">
-          <div class="chart-box">
-            <canvas id="stock-chart" aria-label="График цены акции" role="img"></canvas>
-            <p class="chart-error" id="stocks-error" hidden></p>
-            <button type="button" class="chart-reset" id="stock-reset" hidden>Сброс масштаба</button>
+      <section class="card panel" id="panel-stocks" data-panel="stocks" aria-labelledby="stocks-title">
+        <div class="card-head" data-drag>
+          <div class="card-title">
+            <p class="eyebrow" id="stocks-title">Акции</p>
+            <h2 id="stock-name">загрузка…</h2>
+            <p class="meta" id="stocks-meta">—</p>
+          </div>
+          <div class="value" id="stock-value">—</div>
+        </div>
+
+        <div class="ranges" id="stocks-ranges" role="group" aria-label="Период"></div>
+
+        <div class="stocks-body">
+          <div class="stock-main">
+            <div class="chart-box">
+              <canvas id="stock-chart" aria-label="График цены акции" role="img"></canvas>
+              <p class="chart-error" id="stocks-error" hidden></p>
+              <button type="button" class="chart-reset" id="stock-reset" hidden>Сброс масштаба</button>
+            </div>
+
+            <dl class="stats" id="stock-stats"></dl>
           </div>
 
-          <dl class="stats" id="stock-stats"></dl>
+          <div class="tiles" id="stock-tiles" role="group" aria-label="Выбор бумаги"></div>
         </div>
-
-        <div class="tiles" id="stock-tiles" role="group" aria-label="Выбор бумаги"></div>
-      </div>
-    </section>
+      </section>
+    </div>
 
     <footer class="foot">
       Источники: <a href="https://www.cbr.ru/currency_base/dynamics/" rel="noopener">ЦБ РФ</a> (валюты),
@@ -73,6 +79,6 @@
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.2.0/dist/chartjs-plugin-zoom.min.js"></script>
-  <script src="app.js?v=5"></script>
+  <script src="app.js?v=6"></script>
 </body>
 </html>

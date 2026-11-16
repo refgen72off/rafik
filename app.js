@@ -431,7 +431,194 @@ async function initStocks() {
   draw(DEFAULT_RANGE);
 }
 
+// ---------- свободная раскладка окон ----------
+
+const LAYOUT_KEY = 'rafik.layout.v1';
+const MIN_W = 360;
+const MIN_H = 300;
+
+function loadLayout() {
+  try {
+    return JSON.parse(localStorage.getItem(LAYOUT_KEY) ?? 'null');
+  } catch {
+    return null;
+  }
+}
+
+function saveLayout(layout) {
+  try {
+    localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout));
+  } catch {
+    /* приватный режим: раскладка просто не запомнится */
+  }
+}
+
+function initDesk() {
+  const desk = document.getElementById('desk');
+  if (!desk) return;
+
+  const panels = [...desk.querySelectorAll('.panel')];
+  const resetBtn = document.getElementById('layout-reset');
+  const isDesktop = () => window.matchMedia('(min-width: 901px)').matches;
+
+  let layout = loadLayout();
+  let zTop = 1;
+
+  const defaultLayout = () => {
+    const width = desk.clientWidth;
+    const out = {};
+    let y = 0;
+    for (const panel of panels) {
+      const height = panel.dataset.panel === 'fx' ? 640 : 780;
+      out[panel.dataset.panel] = { x: 0, y, w: width, h: height };
+      y += height + 24;
+    }
+    return out;
+  };
+
+  const place = (panel, box) => {
+    panel.style.left = `${box.x}px`;
+    panel.style.top = `${box.y}px`;
+    panel.style.width = `${box.w}px`;
+    panel.style.height = `${box.h}px`;
+  };
+
+  const clearInline = () => {
+    desk.style.height = '';
+    for (const panel of panels) {
+      panel.style.left = '';
+      panel.style.top = '';
+      panel.style.width = '';
+      panel.style.height = '';
+    }
+  };
+
+  const fitDesk = () => {
+    let bottom = 0;
+    for (const panel of panels) {
+      const box = layout[panel.dataset.panel];
+      if (box) bottom = Math.max(bottom, box.y + box.h);
+    }
+    desk.style.height = `${bottom + 24}px`;
+  };
+
+  const clampAll = () => {
+    const width = desk.clientWidth;
+    for (const panel of panels) {
+      const box = layout[panel.dataset.panel];
+      if (!box) continue;
+      box.w = Math.max(MIN_W, Math.min(box.w, width));
+      box.x = Math.max(0, Math.min(box.x, Math.max(0, width - box.w)));
+      box.h = Math.max(MIN_H, box.h);
+      box.y = Math.max(0, box.y);
+    }
+  };
+
+  const render = () => {
+    if (!isDesktop()) return;
+    clampAll();
+    for (const panel of panels) place(panel, layout[panel.dataset.panel]);
+    fitDesk();
+    if (resetBtn) resetBtn.hidden = false;
+  };
+
+  layout = layout ?? defaultLayout();
+  render();
+
+  // Chart.js 4.4 откладывает resize() до следующего draw, если анимация «запущена»,
+  // поэтому после смены размеров панели графики нужно явно перерисовать.
+  const resizeCharts = () => {
+    for (const chart of Object.values(Chart.instances)) {
+      chart.resize();
+      chart.draw();
+    }
+  };
+
+  const beginMove = (panel, mode, event) => {
+    if (!isDesktop() || event.button !== 0) return;
+    event.preventDefault();
+
+    const key = panel.dataset.panel;
+    const origin = { ...layout[key] };
+    const from = { x: event.clientX, y: event.clientY };
+    const cursor =
+      mode === 'drag' ? 'grabbing' : mode === 'e' ? 'ew-resize' : mode === 's' ? 'ns-resize' : 'nwse-resize';
+
+    panel.style.zIndex = String(++zTop + 1);
+    panel.dataset.active = 'true';
+    document.body.classList.add('is-moving');
+    document.body.style.cursor = cursor;
+
+    const move = (e) => {
+      const dx = e.clientX - from.x;
+      const dy = e.clientY - from.y;
+      const box = { ...origin };
+
+      if (mode === 'drag') {
+        box.x = Math.max(0, Math.min(desk.clientWidth - 80, origin.x + dx));
+        box.y = Math.max(0, origin.y + dy);
+      } else {
+        if (mode.includes('e')) box.w = Math.max(MIN_W, Math.min(desk.clientWidth - origin.x, origin.w + dx));
+        if (mode.includes('s')) box.h = Math.max(MIN_H, origin.h + dy);
+      }
+
+      layout[key] = box;
+      place(panel, box);
+      fitDesk();
+    };
+
+    const end = () => {
+      window.removeEventListener('pointermove', move);
+      document.body.classList.remove('is-moving');
+      document.body.style.cursor = '';
+      delete panel.dataset.active;
+      saveLayout(layout);
+      resizeCharts();
+    };
+
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', end, { once: true });
+  };
+
+  for (const panel of panels) {
+    for (const dir of ['e', 's', 'se']) {
+      const grip = document.createElement('span');
+      grip.className = `grip grip-${dir}`;
+      grip.dataset.resize = dir;
+      grip.setAttribute('aria-hidden', 'true');
+      panel.append(grip);
+      grip.addEventListener('pointerdown', (event) => beginMove(panel, dir, event));
+    }
+
+    panel.querySelector('[data-drag]')?.addEventListener('pointerdown', (event) => {
+      if (event.target.closest('button, a, input')) return;
+      beginMove(panel, 'drag', event);
+    });
+  }
+
+  resetBtn?.addEventListener('click', () => {
+    layout = defaultLayout();
+    try {
+      localStorage.removeItem(LAYOUT_KEY);
+    } catch {
+      /* ничего не поделать, просто сбрасываем в памяти */
+    }
+    render();
+    resizeCharts();
+  });
+
+  window.addEventListener('resize', () => {
+    if (!isDesktop()) {
+      clearInline();
+      if (resetBtn) resetBtn.hidden = true;
+      return;
+    }
+    render();
+  });
+}
+
 // ---------- запуск ----------
 
 initCurrency();
 initStocks();
+initDesk();

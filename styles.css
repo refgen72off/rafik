@@ -202,6 +202,147 @@ body {
 
 .foot a { color: var(--muted); }
 
+.head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.ghost {
+  flex: none;
+  padding: 6px 12px;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--card-border);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.ghost:hover {
+  color: var(--text);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* ---------- окна графиков: перетаскивание и размер ---------- */
+
+.desk {
+  position: relative;
+  margin-top: 26px;
+  min-height: 400px;
+}
+
+.panel {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  min-width: 360px;
+  min-height: 300px;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.panel[data-active="true"] {
+  border-color: rgba(91, 157, 255, 0.4);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+}
+
+.panel > .card-head {
+  flex: none;
+  cursor: move;
+  user-select: none;
+  touch-action: none;
+}
+
+.panel > .ranges,
+.panel > .stats {
+  flex: none;
+}
+
+.panel > .stats {
+  margin-top: 14px;
+}
+
+.panel > .chart-box {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 150px;
+}
+
+.panel .stocks-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  grid-template-columns: minmax(0, 1fr) minmax(170px, 32%);
+}
+
+.panel .stock-main {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.panel .stock-main .chart-box {
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 120px;
+}
+
+.panel .tiles {
+  max-height: none;
+  min-height: 0;
+}
+
+.grip {
+  position: absolute;
+  z-index: 4;
+  touch-action: none;
+}
+
+.grip-e {
+  top: 10px;
+  right: 0;
+  bottom: 14px;
+  width: 9px;
+  cursor: ew-resize;
+}
+
+.grip-s {
+  left: 10px;
+  right: 14px;
+  bottom: 0;
+  height: 9px;
+  cursor: ns-resize;
+}
+
+.grip-se {
+  right: 0;
+  bottom: 0;
+  width: 18px;
+  height: 18px;
+  cursor: nwse-resize;
+}
+
+.grip-se::after {
+  content: '';
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  width: 9px;
+  height: 9px;
+  border-right: 2px solid rgba(255, 255, 255, 0.35);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.35);
+  border-bottom-right-radius: 3px;
+}
+
+body.is-moving * {
+  user-select: none !important;
+  cursor: inherit !important;
+}
+
 /* плитки бумаг */
 
 .stocks-body {
@@ -311,9 +452,33 @@ body {
 }
 
 @media (max-width: 900px) {
+  .desk {
+    position: static;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-height: 0;
+    height: auto !important;
+  }
+  .panel {
+    position: static;
+    width: auto !important;
+    height: auto !important;
+    min-width: 0;
+    min-height: 0;
+    overflow: visible;
+  }
+  .panel > .card-head { cursor: default; }
+  .panel > .chart-box,
+  .panel .stock-main .chart-box {
+    flex: none;
+    height: 320px;
+  }
+  .panel .tiles { max-height: none; }
+  .grip { display: none; }
+  .ghost { display: none; }
   .stocks-body { grid-template-columns: 1fr; }
   .tiles {
-    max-height: none;
     padding-right: 0;
     margin-top: 16px;
   }
@@ -324,6 +489,7 @@ body {
   .head h1 { font-size: 24px; }
   .card { padding: 18px 16px 14px; }
   .value { font-size: 26px; }
-  .chart-box { height: 300px; }
+  .panel > .chart-box,
+  .panel .stock-main .chart-box { height: 300px; }
   .stats { grid-template-columns: 1fr; }
 }
