@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Графики</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="wrap">
+    <header class="head">
+      <h1>Графики</h1>
+      <p class="sub">Личная страница. Данные: официальные курсы ЦБ РФ, обновление раз в день.</p>
+    </header>
+
+    <section class="card" aria-labelledby="usd-title">
+      <div class="card-head">
+        <div class="card-title">
+          <h2 id="usd-title">Доллар США / рубль</h2>
+          <p class="meta" id="usd-meta">загрузка…</p>
+        </div>
+        <div class="value" id="usd-value">—</div>
+      </div>
+
+      <div class="ranges" id="usd-ranges" role="group" aria-label="Период"></div>
+
+      <div class="chart-box">
+        <canvas id="usd-chart" aria-label="График курса доллара к рублю" role="img"></canvas>
+        <p class="chart-error" id="usd-error" hidden></p>
+      </div>
+
+      <dl class="stats" id="usd-stats"></dl>
+    </section>
+
+    <footer class="foot">
+      Источник: <a href="https://www.cbr.ru/currency_base/dynamics/" rel="noopener">ЦБ РФ</a>.
+      Последнее обновление данных: <span id="updated">—</span>
+    </footer>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
