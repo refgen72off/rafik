@@ -21,10 +21,15 @@ jobs:
           node-version: 22
 
       - name: Курсы ЦБ РФ
+        continue-on-error: true
         run: node scripts/fetch-rates.mjs
 
       - name: Котировки Мосбиржи
+        continue-on-error: true
         run: node scripts/fetch-stocks.mjs
+
+      - name: Сводка
+        run: git diff --stat -- data/rates.json data/stocks.json
 
       - name: Закоммитить изменения
         run: |
