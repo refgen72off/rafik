@@ -329,7 +329,6 @@ async function initStocks() {
   const metaEl = document.getElementById('stocks-meta');
   const nameEl = document.getElementById('stock-name');
   const valueEl = document.getElementById('stock-value');
-  const statsEl = document.getElementById('stock-stats');
   const errorEl = document.getElementById('stocks-error');
   const canvas = document.getElementById('stock-chart');
   const rangesEl = document.getElementById('stocks-ranges');
@@ -419,7 +418,6 @@ async function initStocks() {
     nameEl.textContent = series.name;
     valueEl.textContent = `${priceText(last)} ₽`;
     valueEl.title = `${pct >= 0 ? '+' : '−'}${num(Math.abs(pct), 1)} % за период`;
-    renderStats(statsEl, points);
     metaEl.textContent = `${selected} · Мосбиржа · ${shortDate(points[0][0])} — ${shortDate(points[points.length - 1][0])}`;
 
     if (!chart) chart = createDetailChart(canvas, points, { resetButton });
@@ -472,7 +470,7 @@ function initDesk() {
     const out = {};
     let y = 0;
     for (const panel of panels) {
-      const height = panel.dataset.panel === 'fx' ? 640 : 780;
+      const height = panel.dataset.panel === 'fx' ? 640 : 860;
       out[panel.dataset.panel] = { x: 0, y, w: width, h: height };
       y += height + 24;
     }

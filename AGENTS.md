@@ -11,13 +11,14 @@ branch), поэтому пуш в `main` = деплой через 1–2 мин�
 - `index.html` — каркас: две панели в `.desk` — валюта (`usd-*`) и акции (`stock-*`, `stocks-*`).
 - `app.js` — вся логика. `RANGES` — общий список периодов для всех карточек; `createDetailChart`
   + `updateDetailChart` — большой график, `createSpark` — миниатюра в плитке, `createRanges` —
-  кнопки периодов, `renderStats` — изменение/мин/макс, `initCurrency` и `initStocks` — карточки.
+  кнопки периодов, `renderStats` — изменение/мин/макс (сейчас только в карточке валюты),
+  `initCurrency` и `initStocks` — карточки.
   Свободная раскладка окон — `initDesk`: перетаскивание за шапку, размер за край/угол, раскладка
   в `localStorage` под ключом `rafik.layout.v1` (пиксели относительно `.desk`).
   Масштаб и сдвиг графика — `chartjs-plugin-zoom` (настройки в `plugins.zoom` внутри
   `createDetailChart`), границы — `applyZoomLimits`, сброс — кнопка `.chart-reset`.
-- `styles.css` — тёмная тема; ключевые классы `.card`, `.stocks-body` (сетка «график + колонка
-  плиток»), `.tiles`, `.tile`, `.spark`, `.stats`. Страница занимает всю ширину окна
+- `styles.css` — тёмная тема; ключевые классы `.card`, `.stocks-body` (график сверху, плитки
+  под ним), `.tiles`, `.tile`, `.spark`, `.stats`. Страница занимает всю ширину окна
   (`.wrap { max-width: none }`), текст шапки ограничен `.head-main`.
 - `data/rates.json`, `data/stocks.json` — сгенерированные ряды, руками не править.
 - `scripts/fetch-rates.mjs` (ЦБ РФ), `scripts/fetch-stocks.mjs` (MOEX ISS),

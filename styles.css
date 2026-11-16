@@ -278,27 +278,18 @@ body {
   min-height: 150px;
 }
 
-.panel .stocks-body {
-  flex: 1 1 auto;
-  min-height: 0;
-  grid-template-columns: minmax(0, 1fr) minmax(170px, 32%);
-}
-
-.panel .stock-main {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-}
-
-.panel .stock-main .chart-box {
+.stocks-body > .chart-box {
   flex: 1 1 auto;
   height: auto;
-  min-height: 120px;
+  min-height: 150px;
 }
 
-.panel .tiles {
-  max-height: none;
+/* плитки идут под графиком и прокручиваются, если не помещаются в окно */
+.stocks-body .tiles {
+  flex: 0 1 auto;
   min-height: 0;
+  max-height: 46%;
+  overflow-y: auto;
 }
 
 .grip {
@@ -351,43 +342,19 @@ body.is-moving * {
 /* плитки бумаг */
 
 .stocks-body {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
-  gap: 18px;
-  align-items: start;
-}
-
-.stock-main { min-width: 0; }
-
-/* в узкой колонке три статистики читаются лучше строчками */
-.stock-main .stats {
-  grid-template-columns: 1fr;
-  gap: 8px;
-}
-
-.stock-main .stats div {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 9px 14px;
+  flex-direction: column;
+  gap: 14px;
+  align-items: stretch;
+  flex: 1 1 auto;
+  min-height: 0;
 }
-
-.stock-main .stats dt {
-  margin: 0;
-  font-size: 11px;
-  letter-spacing: 0.05em;
-}
-
-.stock-main .stats dd { font-size: 15px; }
 
 .tiles {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
   gap: 8px;
   margin-top: 0;
-  max-height: 470px;
-  overflow-y: auto;
   padding-right: 4px;
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
@@ -475,17 +442,19 @@ body.is-moving * {
   }
   .panel > .card-head { cursor: default; }
   .panel > .chart-box,
-  .panel .stock-main .chart-box {
+  .stocks-body > .chart-box {
     flex: none;
     height: 320px;
   }
-  .panel .tiles { max-height: none; }
+  .stocks-body .tiles {
+    max-height: none;
+    overflow: visible;
+  }
   .grip { display: none; }
   .ghost { display: none; }
-  .stocks-body { grid-template-columns: 1fr; }
   .tiles {
     padding-right: 0;
-    margin-top: 16px;
+    margin-top: 0;
   }
 }
 
@@ -495,6 +464,6 @@ body.is-moving * {
   .card { padding: 18px 16px 14px; }
   .value { font-size: 26px; }
   .panel > .chart-box,
-  .panel .stock-main .chart-box { height: 300px; }
+  .stocks-body > .chart-box { height: 300px; }
   .stats { grid-template-columns: 1fr; }
 }
