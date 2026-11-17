@@ -159,6 +159,7 @@ function rateDataset(points, visible = true) {
 
 const RATE_SCALE = {
   position: 'left',
+  min: 0,
   grid: { display: false },
   border: { display: false },
   ticks: {
