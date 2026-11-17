@@ -83,9 +83,12 @@ const seriesPoints = (points) => points.map(([date, value]) => ({ x: `${date}T00
 
 // Для ступенчатой ставки нужна точка, действовавшая на начало периода,
 // иначе линия начнётся только с первого изменения внутри окна.
+// Дата этой точки заменяется на fromDate: со своей исходной датой (например,
+// последним решением ЦБ) она растягивает общую ось X за пределы выбранного периода.
 function sliceRatePoints(ratePoints, fromDate) {
   const next = ratePoints.findIndex(([date]) => date > fromDate);
-  return next === -1 ? ratePoints.slice(-1) : ratePoints.slice(Math.max(0, next - 1));
+  const slice = next === -1 ? ratePoints.slice(-1) : ratePoints.slice(Math.max(0, next - 1));
+  return slice.map(([date, value], i) => (i === 0 && date < fromDate ? [fromDate, value] : [date, value]));
 }
 
 // Продлевает последнюю ставку до конца окна: иначе ступенька обрывается на дате
