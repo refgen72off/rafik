@@ -154,6 +154,22 @@ body {
   border-top-color: rgba(255, 255, 255, 0.25);
 }
 
+.chip-line {
+  width: 16px;
+  height: 0;
+  border-top: 2px solid #4ade80;
+}
+
+/* чип Примсоцбанка — зелёный, а не ставка-оранжевый */
+.chip-psb[aria-pressed="true"] {
+  border-color: rgba(74, 222, 128, 0.45);
+  background: rgba(74, 222, 128, 0.1);
+}
+
+.chip-psb[aria-pressed="false"] .chip-line {
+  border-top-color: rgba(255, 255, 255, 0.25);
+}
+
 .chart-box {
   position: relative;
   height: 380px;

@@ -15,6 +15,7 @@ const DEFAULT_RANGE = '1y';
 
 const ACCENT = '#5b9dff';
 const RATE_COLOR = '#f7b955';
+const PSB_COLOR = '#4ade80';
 const UP = '#4ade80';
 const DOWN = '#f87171';
 const MONTHS = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
@@ -131,7 +132,7 @@ function tooltipPlugin(unit) {
       label: (item) => {
         const suffix = item.dataset.unit ?? unit;
         const value = suffix === '%' ? num(item.parsed.y, 2) : priceText(item.parsed.y);
-        return `${value} ${suffix}`;
+        return `${item.dataset.label ?? 'Курс'}: ${value} ${suffix}`;
       },
     },
   };
@@ -140,6 +141,7 @@ function tooltipPlugin(unit) {
 // Ключевая ставка — ступенчатая линия на своей оси, поверх курса.
 function rateDataset(points, visible = true) {
   return {
+    id: 'rate',
     label: 'Ключевая ставка',
     unit: '%',
     data: seriesPoints(points),
@@ -160,6 +162,29 @@ function rateDataset(points, visible = true) {
   };
 }
 
+// Курс продажи доллара в Примсоцбанке — зелёная линия на той же оси ₽, что и курс ЦБ.
+function psbDataset(points, visible = true) {
+  return {
+    id: 'pskb',
+    label: 'Примсоцбанк, продажа',
+    unit: '₽',
+    data: seriesPoints(points),
+    borderColor: PSB_COLOR,
+    borderWidth: 2,
+    fill: false,
+    // пока в истории одна-две точки, линия не рисуется — показываем маркеры
+    pointRadius: points.length < 3 ? 3 : 0,
+    pointHitRadius: 8,
+    pointHoverRadius: 4,
+    pointHoverBackgroundColor: PSB_COLOR,
+    pointHoverBorderColor: '#fff',
+    pointHoverBorderWidth: 2,
+    spanGaps: true,
+    tension: 0.15,
+    hidden: !visible,
+  };
+}
+
 const RATE_SCALE = {
   position: 'left',
   min: 0,
@@ -173,7 +198,11 @@ const RATE_SCALE = {
   },
 };
 
-function createDetailChart(canvas, points, { unit = '₽', resetButton = null, ratePoints = null, showRate = true } = {}) {
+function createDetailChart(
+  canvas,
+  points,
+  { unit = '₽', resetButton = null, ratePoints = null, showRate = true, psbPoints = null, showPsb = true } = {},
+) {
   const ctx = canvas.getContext('2d');
   let chart = null;
 
@@ -195,7 +224,8 @@ function createDetailChart(canvas, points, { unit = '₽', resetButton = null, r
     data: {
       datasets: [
         {
-          label: 'Курс',
+          id: 'cbr',
+          label: 'ЦБ РФ',
           unit: '₽',
           data: seriesPoints(points),
           borderColor: ACCENT,
@@ -212,6 +242,7 @@ function createDetailChart(canvas, points, { unit = '₽', resetButton = null, r
           spanGaps: true,
         },
         ...(ratePoints?.length ? [rateDataset(ratePoints, showRate)] : []),
+        ...(psbPoints?.length ? [psbDataset(psbPoints, showPsb)] : []),
       ],
     },
     options: {
@@ -271,10 +302,17 @@ function createDetailChart(canvas, points, { unit = '₽', resetButton = null, r
   return chart;
 }
 
-function updateDetailChart(chart, points, unit = '₽', ratePoints = null) {
+function updateDetailChart(chart, points, unit = '₽', ratePoints = null, psbPoints = null) {
+  const byId = (id) => chart.data.datasets.find((d) => d.id === id);
   const days = spanDays(points);
-  chart.data.datasets[0].data = seriesPoints(points);
-  if (chart.data.datasets[1]) chart.data.datasets[1].data = seriesPoints(ratePoints ?? []);
+  byId('cbr').data = seriesPoints(points);
+  const rateDs = byId('rate');
+  if (rateDs) rateDs.data = seriesPoints(ratePoints ?? []);
+  const psbDs = byId('pskb');
+  if (psbDs) {
+    psbDs.data = seriesPoints(psbPoints ?? []);
+    psbDs.pointRadius = (psbPoints?.length ?? 0) < 3 ? 3 : 0;
+  }
   chart.options.scales.x.time.unit = tickUnit(days);
   chart.options.scales.x.ticks.callback = tickFormatter(days);
   chart.options.plugins.tooltip = tooltipPlugin(unit);
@@ -353,9 +391,36 @@ async function initCurrency() {
 
   const lastDate = all[all.length - 1][0];
   const rate = data.series?.RATE?.points ?? [];
+
+  // Курс Примсоцбанка — отдельный файл: его отсутствие не должно ломать график ЦБ.
+  let psb = [];
+  try {
+    const res = await fetch('data/pskb.json', { cache: 'no-cache' });
+    if (res.ok) psb = (await res.json()).series?.PSKB_SELL?.points ?? [];
+  } catch {
+    /* линии Примсоцбанка просто не будет */
+  }
+  const psbLastDate = psb.length ? psb[psb.length - 1][0] : null;
+
+  const psbToggle = document.getElementById('pskb-toggle');
+  let showPsb = psb.length > 0;
+  let chart = null;
+
+  if (psbToggle) {
+    psbToggle.hidden = !psb.length;
+    psbToggle.setAttribute('aria-pressed', String(showPsb));
+    psbToggle.addEventListener('click', () => {
+      showPsb = !showPsb;
+      psbToggle.setAttribute('aria-pressed', String(showPsb));
+      if (!chart) return;
+      const index = chart.data.datasets.findIndex((d) => d.id === 'pskb');
+      if (index >= 0) chart.setDatasetVisibility(index, showPsb);
+      chart.update();
+    });
+  }
+
   const rateToggle = document.getElementById('rate-toggle');
   let showRate = rate.length > 0;
-  let chart = null;
 
   if (rateToggle) {
     rateToggle.hidden = !rate.length;
@@ -364,7 +429,8 @@ async function initCurrency() {
       showRate = !showRate;
       rateToggle.setAttribute('aria-pressed', String(showRate));
       if (!chart) return;
-      chart.setDatasetVisibility(1, showRate);
+      const index = chart.data.datasets.findIndex((d) => d.id === 'rate');
+      if (index >= 0) chart.setDatasetVisibility(index, showRate);
       chart.options.scales.rate.display = showRate;
       chart.update();
     });
@@ -373,9 +439,10 @@ async function initCurrency() {
   const draw = (range) => {
     const points = sliceRange(all, range, lastDate);
     const ratePoints = rate.length ? extendRate(sliceRatePoints(rate, points[0][0]), points) : [];
+    const psbPoints = psb.length ? sliceRange(psb, range, psbLastDate) : [];
     metaEl.textContent = `ЦБ РФ · ${shortDate(points[0][0])} — ${shortDate(points[points.length - 1][0])}`;
-    if (!chart) chart = createDetailChart(canvas, points, { resetButton, ratePoints, showRate });
-    else updateDetailChart(chart, points, '₽', ratePoints);
+    if (!chart) chart = createDetailChart(canvas, points, { resetButton, ratePoints, showRate, psbPoints, showPsb });
+    else updateDetailChart(chart, points, '₽', ratePoints, psbPoints);
   };
 
   valueEl.textContent = `${num(all[all.length - 1][1], 4)} ₽`;

@@ -8,10 +8,12 @@
 ## Как это работает
 
 - `data/rates.json` — курсы валют с 2016 года из XML-выгрузки ЦБ РФ (`XML_dynamic.asp`).
+- `data/pskb.json` — курс продажи USD в Примсоцбанке (Екатеринбург, наличные) с 2026-11-17;
+  истории на сайте банка нет, ряд накапливается по точке в день.
 - `data/stocks.json` — дневные цены закрытия с 2021 года из MOEX ISS
   (`iss.moex.com/.../candles.json`, режим TQBR).
 - `.github/workflows/update-rates.yml` — GitHub Action: раз в день (17:40 МСК) заново забирает
-  оба ряда и коммитит их, если данные изменились. Запуск вручную: вкладка Actions →
+  все ряды и коммитит их, если данные изменились. Запуск вручную: вкладка Actions →
   *Обновление данных* → *Run workflow*.
 - Страница статическая: `index.html` + `styles.css` + `app.js`, графики рисует Chart.js с CDN.
 
@@ -23,6 +25,7 @@ CORS-заголовки — прямой `fetch` со страницы был б
 ```powershell
 npx serve .                     # страница: http://localhost:3000 (fetch из file:// не работает)
 node scripts/fetch-rates.mjs    # обновить курсы ЦБ
+node scripts/fetch-pskb.mjs     # обновить курс Примсоцбанка (дописывает точку за сегодня)
 node scripts/fetch-stocks.mjs   # обновить котировки MOEX (~30 тыс. точек, 1–2 минуты)
 ```
 
