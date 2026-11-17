@@ -14,6 +14,7 @@ const RANGES = [
 const DEFAULT_RANGE = '1y';
 
 const ACCENT = '#5b9dff';
+const RATE_COLOR = '#f7b955';
 const UP = '#4ade80';
 const DOWN = '#f87171';
 const MONTHS = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
@@ -80,6 +81,22 @@ function sliceRange(points, rangeId, lastDate) {
 
 const seriesPoints = (points) => points.map(([date, value]) => ({ x: `${date}T00:00:00`, y: value }));
 
+// Для ступенчатой ставки нужна точка, действовавшая на начало периода,
+// иначе линия начнётся только с первого изменения внутри окна.
+function sliceRatePoints(ratePoints, fromDate) {
+  const next = ratePoints.findIndex(([date]) => date > fromDate);
+  return next === -1 ? ratePoints.slice(-1) : ratePoints.slice(Math.max(0, next - 1));
+}
+
+// Продлевает последнюю ставку до конца окна: иначе ступенька обрывается на дате
+// последнего решения ЦБ, хотя эта ставка действует до сих пор.
+function extendRate(ratePoints, marketPoints) {
+  if (!ratePoints.length || !marketPoints.length) return ratePoints;
+  const end = marketPoints[marketPoints.length - 1][0];
+  const last = ratePoints[ratePoints.length - 1];
+  return last[0] >= end ? ratePoints : [...ratePoints, [end, last[1]]];
+}
+
 const ts = (iso) => new Date(`${iso}T00:00:00`).getTime();
 
 // Границы, за которые зум/сдвиг не выходят: только даты из текущего ряда.
@@ -108,12 +125,51 @@ function tooltipPlugin(unit) {
     displayColors: false,
     callbacks: {
       title: (items) => longDate(String(items[0].raw.x).slice(0, 10)),
-      label: (item) => `${priceText(item.parsed.y)} ${unit}`,
+      label: (item) => {
+        const suffix = item.dataset.unit ?? unit;
+        const value = suffix === '%' ? num(item.parsed.y, 2) : priceText(item.parsed.y);
+        return `${value} ${suffix}`;
+      },
     },
   };
 }
 
-function createDetailChart(canvas, points, { unit = '₽', resetButton = null } = {}) {
+// Ключевая ставка — ступенчатая линия на своей оси, поверх курса.
+function rateDataset(points, visible = true) {
+  return {
+    label: 'Ключевая ставка',
+    unit: '%',
+    data: seriesPoints(points),
+    yAxisID: 'rate',
+    borderColor: RATE_COLOR,
+    borderWidth: 1.8,
+    borderDash: [5, 4],
+    fill: false,
+    stepped: true,
+    pointRadius: 0,
+    pointHitRadius: 8,
+    pointHoverRadius: 4,
+    pointHoverBackgroundColor: RATE_COLOR,
+    pointHoverBorderColor: '#fff',
+    pointHoverBorderWidth: 2,
+    spanGaps: true,
+    hidden: !visible,
+  };
+}
+
+const RATE_SCALE = {
+  position: 'left',
+  grid: { display: false },
+  border: { display: false },
+  ticks: {
+    color: '#8b97ab',
+    padding: 6,
+    // ставка бывает дробной (14,25), поэтому без принудительных нулей
+    callback: (value) => `${new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 2 }).format(value)} %`,
+  },
+};
+
+function createDetailChart(canvas, points, { unit = '₽', resetButton = null, ratePoints = null, showRate = true } = {}) {
   const ctx = canvas.getContext('2d');
   let chart = null;
 
@@ -135,7 +191,8 @@ function createDetailChart(canvas, points, { unit = '₽', resetButton = null } 
     data: {
       datasets: [
         {
-          label: 'Цена',
+          label: 'Курс',
+          unit: '₽',
           data: seriesPoints(points),
           borderColor: ACCENT,
           borderWidth: 2,
@@ -150,6 +207,7 @@ function createDetailChart(canvas, points, { unit = '₽', resetButton = null } 
           tension: 0.2,
           spanGaps: true,
         },
+        ...(ratePoints?.length ? [rateDataset(ratePoints, showRate)] : []),
       ],
     },
     options: {
@@ -195,6 +253,7 @@ function createDetailChart(canvas, points, { unit = '₽', resetButton = null } 
             callback: (value) => `${priceText(value)} ${unit}`,
           },
         },
+        ...(ratePoints?.length ? { rate: { ...RATE_SCALE } } : {}),
       },
     },
   });
@@ -208,9 +267,10 @@ function createDetailChart(canvas, points, { unit = '₽', resetButton = null } 
   return chart;
 }
 
-function updateDetailChart(chart, points, unit = '₽') {
+function updateDetailChart(chart, points, unit = '₽', ratePoints = null) {
   const days = spanDays(points);
   chart.data.datasets[0].data = seriesPoints(points);
+  if (chart.data.datasets[1]) chart.data.datasets[1].data = seriesPoints(ratePoints ?? []);
   chart.options.scales.x.time.unit = tickUnit(days);
   chart.options.scales.x.ticks.callback = tickFormatter(days);
   chart.options.plugins.tooltip = tooltipPlugin(unit);
@@ -288,13 +348,30 @@ async function initCurrency() {
   }
 
   const lastDate = all[all.length - 1][0];
+  const rate = data.series?.RATE?.points ?? [];
+  const rateToggle = document.getElementById('rate-toggle');
+  let showRate = rate.length > 0;
   let chart = null;
+
+  if (rateToggle) {
+    rateToggle.hidden = !rate.length;
+    rateToggle.setAttribute('aria-pressed', String(showRate));
+    rateToggle.addEventListener('click', () => {
+      showRate = !showRate;
+      rateToggle.setAttribute('aria-pressed', String(showRate));
+      if (!chart) return;
+      chart.setDatasetVisibility(1, showRate);
+      chart.options.scales.rate.display = showRate;
+      chart.update();
+    });
+  }
 
   const draw = (range) => {
     const points = sliceRange(all, range, lastDate);
+    const ratePoints = rate.length ? extendRate(sliceRatePoints(rate, points[0][0]), points) : [];
     metaEl.textContent = `ЦБ РФ · ${shortDate(points[0][0])} — ${shortDate(points[points.length - 1][0])}`;
-    if (!chart) chart = createDetailChart(canvas, points, { resetButton });
-    else updateDetailChart(chart, points);
+    if (!chart) chart = createDetailChart(canvas, points, { resetButton, ratePoints, showRate });
+    else updateDetailChart(chart, points, '₽', ratePoints);
   };
 
   valueEl.textContent = `${num(all[all.length - 1][1], 4)} ₽`;

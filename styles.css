@@ -112,6 +112,48 @@ body {
   border-color: rgba(91, 157, 255, 0.55);
 }
 
+/* переключатель дополнительной линии (ключевая ставка) */
+
+.toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 6px 0 2px;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--card-border);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.chip:hover { color: var(--text); border-color: rgba(255, 255, 255, 0.18); }
+
+.chip[aria-pressed="true"] {
+  color: var(--text);
+  border-color: rgba(247, 185, 85, 0.45);
+  background: rgba(247, 185, 85, 0.1);
+}
+
+.chip-dash {
+  width: 16px;
+  height: 0;
+  border-top: 2px dashed #f7b955;
+}
+
+.chip[aria-pressed="false"] .chip-dash {
+  border-top-color: rgba(255, 255, 255, 0.25);
+}
+
 .chart-box {
   position: relative;
   height: 380px;
