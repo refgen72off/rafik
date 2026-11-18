@@ -24,12 +24,9 @@ jobs:
         continue-on-error: true
         run: node scripts/fetch-rates.mjs
 
-      - name: Курс Примсоцбанка
-        continue-on-error: true
-        # pskb.com не пускает зарубежные IP, а раннер — в США: шаг обычно падает
-        # с таймаутом. Резервный источник — scripts/update-pskb.ps1 на домашней машине;
-        # шаг оставлен на случай, если доступ откроют.
-        run: node scripts/fetch-pskb.mjs
+      # ПСКБ здесь не обновляется: pskb.com не пускает зарубежные IP, а раннер — в США
+      # (все запросы виснут до таймаута). Курс дописывает задача планировщика Windows
+      # "rafik-pskb" на домашней машине: scripts/update-pskb.ps1, ежедневно в 10:00.
 
       - name: Котировки Мосбиржи
         continue-on-error: true

@@ -27,8 +27,9 @@ branch), поэтому пуш в `main` = деплой через 1–2 мин�
   банка нет, поэтому ряд накапливается: `scripts/fetch-pskb.mjs` раз в день дописывает точку
   за текущий день (дата по Москве). Корень и промежуточный сертификат УЦ Минцифры, которым
   подписан сайт, — в `scripts/certs/`.
-  Важно: `pskb.com` не пускает зарубежные IP, поэтому из GitHub Actions шаг падает по таймауту;
-  точку дописывает локальная задача `scripts/update-pskb.ps1` на домашней машине.
+  Важно: `pskb.com` не пускает зарубежные IP, поэтому из GitHub Actions шаг ПСКБ недоступен;
+  точку дописывает задача планировщика Windows **`rafik-pskb`** (ежедневно в 10:00, с догоняющим
+  запуском при пропуске), которая вызывает `scripts/update-pskb.ps1` и пушит `data/pskb.json`.
 - `data/pskb-history.json` — ваши точки по прошлым датам (цена, по которой покупали USD),
   правятся руками; на графике — только маркеры (`psbHistoryDataset`, `id: 'pskb-history'`).
 - `scripts/fetch-rates.mjs` (ЦБ РФ), `scripts/fetch-pskb.mjs` (Примсоцбанк),
@@ -119,5 +120,6 @@ branch), поэтому пуш в `main` = деплой через 1–2 мин�
 npx serve .                     # страница: http://localhost:3000 (fetch из file:// не работает)
 node scripts/fetch-rates.mjs    # обновить курсы ЦБ
 node scripts/fetch-pskb.mjs     # обновить курс Примсоцбанка (дописывает точку за сегодня)
+powershell -ExecutionPolicy Bypass -File scripts\update-pskb.ps1  # то же + коммит и пуш
 node scripts/fetch-stocks.mjs   # обновить котировки MOEX (~30 тыс. точек, 1–2 минуты)
 ```
