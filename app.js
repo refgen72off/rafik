@@ -185,6 +185,24 @@ function psbDataset(points, visible = true) {
   };
 }
 
+// Ваши точки по курсу Примсоцбанка за прошлые даты — только маркеры, без линии:
+// даты редкие, линия между ними врала бы про непрерывность.
+function psbHistoryDataset(points, visible = true) {
+  return {
+    id: 'pskb-history',
+    label: 'Примсоцбанк, ваши точки',
+    unit: '₽',
+    data: seriesPoints(points),
+    showLine: false,
+    borderColor: PSB_COLOR,
+    backgroundColor: PSB_COLOR,
+    pointRadius: 4,
+    pointHoverRadius: 6,
+    pointHitRadius: 10,
+    hidden: !visible,
+  };
+}
+
 const RATE_SCALE = {
   position: 'left',
   min: 0,
@@ -201,7 +219,15 @@ const RATE_SCALE = {
 function createDetailChart(
   canvas,
   points,
-  { unit = '₽', resetButton = null, ratePoints = null, showRate = true, psbPoints = null, showPsb = true } = {},
+  {
+    unit = '₽',
+    resetButton = null,
+    ratePoints = null,
+    showRate = true,
+    psbPoints = null,
+    showPsb = true,
+    historyPoints = null,
+  } = {},
 ) {
   const ctx = canvas.getContext('2d');
   let chart = null;
@@ -243,6 +269,7 @@ function createDetailChart(
         },
         ...(ratePoints?.length ? [rateDataset(ratePoints, showRate)] : []),
         ...(psbPoints?.length ? [psbDataset(psbPoints, showPsb)] : []),
+        ...(historyPoints?.length ? [psbHistoryDataset(historyPoints, showPsb)] : []),
       ],
     },
     options: {
@@ -302,7 +329,7 @@ function createDetailChart(
   return chart;
 }
 
-function updateDetailChart(chart, points, unit = '₽', ratePoints = null, psbPoints = null) {
+function updateDetailChart(chart, points, unit = '₽', ratePoints = null, psbPoints = null, historyPoints = null) {
   const byId = (id) => chart.data.datasets.find((d) => d.id === id);
   const days = spanDays(points);
   byId('cbr').data = seriesPoints(points);
@@ -313,6 +340,9 @@ function updateDetailChart(chart, points, unit = '₽', ratePoints = null, psbPo
     psbDs.data = seriesPoints(psbPoints ?? []);
     psbDs.pointRadius = (psbPoints?.length ?? 0) < 3 ? 3 : 0;
   }
+  const historyDs = byId('pskb-history');
+  if (historyDs) historyDs.data = seriesPoints(historyPoints ?? []);
+  else if (historyPoints?.length) chart.data.datasets.push(psbHistoryDataset(historyPoints));
   chart.options.scales.x.time.unit = tickUnit(days);
   chart.options.scales.x.ticks.callback = tickFormatter(days);
   chart.options.plugins.tooltip = tooltipPlugin(unit);
@@ -402,19 +432,29 @@ async function initCurrency() {
   }
   const psbLastDate = psb.length ? psb[psb.length - 1][0] : null;
 
+  // Ваши точки по прошлым датам — отдельный файл, только маркеры.
+  let psbHistory = [];
+  try {
+    const res = await fetch('data/pskb-history.json', { cache: 'no-cache' });
+    if (res.ok) psbHistory = (await res.json()).series?.PSKB_HISTORY?.points ?? [];
+  } catch {
+    /* точек не будет, линия остаётся */
+  }
+
   const psbToggle = document.getElementById('pskb-toggle');
-  let showPsb = psb.length > 0;
+  let showPsb = psb.length > 0 || psbHistory.length > 0;
   let chart = null;
 
   if (psbToggle) {
-    psbToggle.hidden = !psb.length;
+    psbToggle.hidden = !(psb.length || psbHistory.length);
     psbToggle.setAttribute('aria-pressed', String(showPsb));
     psbToggle.addEventListener('click', () => {
       showPsb = !showPsb;
       psbToggle.setAttribute('aria-pressed', String(showPsb));
       if (!chart) return;
-      const index = chart.data.datasets.findIndex((d) => d.id === 'pskb');
-      if (index >= 0) chart.setDatasetVisibility(index, showPsb);
+      chart.data.datasets.forEach((dataset, index) => {
+        if (dataset.id === 'pskb' || dataset.id === 'pskb-history') chart.setDatasetVisibility(index, showPsb);
+      });
       chart.update();
     });
   }
@@ -440,9 +480,20 @@ async function initCurrency() {
     const points = sliceRange(all, range, lastDate);
     const ratePoints = rate.length ? extendRate(sliceRatePoints(rate, points[0][0]), points) : [];
     const psbPoints = psb.length ? sliceRange(psb, range, psbLastDate) : [];
+    // Точки режем по окну графика (по ЦБ), а не по своей последней дате:
+    // иначе редкие старые точки растягивали ось за пределы выбранного периода.
+    const historyPoints = psbHistory.length ? psbHistory.filter(([d]) => d >= points[0][0]) : [];
     metaEl.textContent = `ЦБ РФ · ${shortDate(points[0][0])} — ${shortDate(points[points.length - 1][0])}`;
-    if (!chart) chart = createDetailChart(canvas, points, { resetButton, ratePoints, showRate, psbPoints, showPsb });
-    else updateDetailChart(chart, points, '₽', ratePoints, psbPoints);
+    if (!chart)
+      chart = createDetailChart(canvas, points, {
+        resetButton,
+        ratePoints,
+        showRate,
+        psbPoints,
+        showPsb,
+        historyPoints,
+      });
+    else updateDetailChart(chart, points, '₽', ratePoints, psbPoints, historyPoints);
   };
 
   valueEl.textContent = `${num(all[all.length - 1][1], 4)} ₽`;
