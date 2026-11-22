@@ -30,13 +30,20 @@ const STOCKS = [
   { ticker: 'AFLT', name: 'Аэрофлот' },
 ];
 
+// Индекс — отдельной линией на графике акций, плитки у него нет.
+const INDEX = { code: 'IMOEX', name: 'Индекс МосБиржи' };
+
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const candlesUrl = (ticker, start) =>
   'https://iss.moex.com/iss/engines/stock/markets/shares/boards/TQBR/securities/' +
   `${ticker}/candles.json?from=${START}&interval=24&iss.meta=off&limit=500&start=${start}`;
 
-async function fetchCandles(ticker) {
+const indexUrl = (start) =>
+  'https://iss.moex.com/iss/engines/stock/markets/index/securities/' +
+  `${INDEX.code}/candles.json?from=${START}&interval=24&iss.meta=off&limit=500&start=${start}`;
+
+async function fetchCandles(urlFor) {
   const byDate = new Map();
 
   for (let start = 0; ; start += 500) {
@@ -44,7 +51,7 @@ async function fetchCandles(ticker) {
     let lastError;
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
-        const res = await fetch(candlesUrl(ticker, start), {
+        const res = await fetch(urlFor(start), {
           headers: { 'User-Agent': 'personal-charts/1.0 (+github actions cron)' },
           signal: AbortSignal.timeout(30_000),
         });
@@ -56,7 +63,7 @@ async function fetchCandles(ticker) {
         if (attempt < 3) await sleep(2000 * attempt);
       }
     }
-    if (!response) throw new Error(`${ticker}: ${lastError?.message ?? 'неизвестная ошибка'}`);
+    if (!response) throw new Error(`${urlFor(start)}: ${lastError?.message ?? 'неизвестная ошибка'}`);
 
     const { columns, data } = response.candles ?? { columns: [], data: [] };
     const dateIdx = columns.indexOf('begin');
@@ -80,7 +87,7 @@ async function main() {
   const order = [];
 
   for (const { ticker, name } of STOCKS) {
-    const points = await fetchCandles(ticker);
+    const points = await fetchCandles((start) => candlesUrl(ticker, start));
     if (!points.length) throw new Error(`${ticker}: биржа вернула пустую историю`);
     series[ticker] = { name, points };
     order.push(ticker);
@@ -88,8 +95,21 @@ async function main() {
     await sleep(250);
   }
 
-  const updated = Object.values(series)
-    .map((s) => s.points.at(-1)[0])
+  // Индекс необязателен: если MOEX его не отдал, акции всё равно сохраняем.
+  let index = null;
+  try {
+    const points = await fetchCandles(indexUrl);
+    if (!points.length) throw new Error('биржа вернула пустую историю');
+    index = { code: INDEX.code, name: INDEX.name, points };
+    console.log(`${INDEX.code.padEnd(6)} ${String(points.length).padStart(5)} точек, последняя ${points.at(-1).join(' = ')}`);
+  } catch (err) {
+    console.warn(`Индекс ${INDEX.code} не загрузился: ${err.message}`);
+  }
+
+  const updated = [
+    ...Object.values(series).map((s) => s.points.at(-1)?.[0] ?? ''),
+    index?.points.at(-1)?.[0] ?? '',
+  ]
     .sort()
     .at(-1);
 
@@ -99,6 +119,7 @@ async function main() {
     sourceUrl: 'https://www.moex.com/',
     order,
     series,
+    ...(index ? { index } : {}),
   };
 
   await mkdir(new URL('../data/', import.meta.url), { recursive: true });

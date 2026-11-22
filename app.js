@@ -16,6 +16,7 @@ const DEFAULT_RANGE = '1y';
 const ACCENT = '#5b9dff';
 const RATE_COLOR = '#f7b955';
 const PSB_COLOR = '#4ade80';
+const INDEX_COLOR = '#c084fc';
 const UP = '#4ade80';
 const DOWN = '#f87171';
 const MONTHS = ['янв', 'фев', 'мар', 'апр', 'май', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
@@ -216,6 +217,40 @@ const RATE_SCALE = {
   },
 };
 
+// Индекс МосБиржи — пункты, а не рубли: своя левая ось, чтобы не ломать масштаб цен.
+const INDEX_SCALE = {
+  position: 'left',
+  grid: { display: false },
+  border: { display: false },
+  ticks: {
+    color: '#8b97ab',
+    padding: 6,
+    callback: (value) => new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 }).format(value),
+  },
+};
+
+function indexDataset(points, label, visible = true) {
+  return {
+    id: 'imoex',
+    label,
+    unit: 'п.',
+    data: seriesPoints(points),
+    yAxisID: 'index',
+    borderColor: INDEX_COLOR,
+    borderWidth: 1.8,
+    fill: false,
+    pointRadius: 0,
+    pointHitRadius: 8,
+    pointHoverRadius: 4,
+    pointHoverBackgroundColor: INDEX_COLOR,
+    pointHoverBorderColor: '#fff',
+    pointHoverBorderWidth: 2,
+    spanGaps: true,
+    tension: 0.2,
+    hidden: !visible,
+  };
+}
+
 function createDetailChart(
   canvas,
   points,
@@ -227,6 +262,10 @@ function createDetailChart(
     psbPoints = null,
     showPsb = true,
     historyPoints = null,
+    indexPoints = null,
+    indexLabel = 'Индекс МосБиржи',
+    showIndex = true,
+    priceLabel = 'ЦБ РФ',
   } = {},
 ) {
   const ctx = canvas.getContext('2d');
@@ -251,7 +290,7 @@ function createDetailChart(
       datasets: [
         {
           id: 'cbr',
-          label: 'ЦБ РФ',
+          label: priceLabel,
           unit: '₽',
           data: seriesPoints(points),
           borderColor: ACCENT,
@@ -270,6 +309,7 @@ function createDetailChart(
         ...(ratePoints?.length ? [rateDataset(ratePoints, showRate)] : []),
         ...(psbPoints?.length ? [psbDataset(psbPoints, showPsb)] : []),
         ...(historyPoints?.length ? [psbHistoryDataset(historyPoints, showPsb)] : []),
+        ...(indexPoints?.length ? [indexDataset(indexPoints, indexLabel, showIndex)] : []),
       ],
     },
     options: {
@@ -316,6 +356,7 @@ function createDetailChart(
           },
         },
         ...(ratePoints?.length ? { rate: { ...RATE_SCALE } } : {}),
+        ...(indexPoints?.length ? { index: { ...INDEX_SCALE } } : {}),
       },
     },
   });
@@ -329,10 +370,22 @@ function createDetailChart(
   return chart;
 }
 
-function updateDetailChart(chart, points, unit = '₽', ratePoints = null, psbPoints = null, historyPoints = null) {
+function updateDetailChart(
+  chart,
+  points,
+  unit = '₽',
+  ratePoints = null,
+  psbPoints = null,
+  historyPoints = null,
+  indexPoints = null,
+  indexLabel = null,
+  priceLabel = null,
+) {
   const byId = (id) => chart.data.datasets.find((d) => d.id === id);
   const days = spanDays(points);
-  byId('cbr').data = seriesPoints(points);
+  const priceDs = byId('cbr');
+  priceDs.data = seriesPoints(points);
+  if (priceLabel) priceDs.label = priceLabel;
   const rateDs = byId('rate');
   if (rateDs) rateDs.data = seriesPoints(ratePoints ?? []);
   const psbDs = byId('pskb');
@@ -343,6 +396,14 @@ function updateDetailChart(chart, points, unit = '₽', ratePoints = null, psbPo
   const historyDs = byId('pskb-history');
   if (historyDs) historyDs.data = seriesPoints(historyPoints ?? []);
   else if (historyPoints?.length) chart.data.datasets.push(psbHistoryDataset(historyPoints));
+  const indexDs = byId('imoex');
+  if (indexDs) {
+    indexDs.data = seriesPoints(indexPoints ?? []);
+    if (indexLabel) indexDs.label = indexLabel;
+  } else if (indexPoints?.length) {
+    chart.data.datasets.push(indexDataset(indexPoints, indexLabel ?? 'Индекс МосБиржи'));
+    chart.options.scales.index = { ...INDEX_SCALE };
+  }
   chart.options.scales.x.time.unit = tickUnit(days);
   chart.options.scales.x.ticks.callback = tickFormatter(days);
   chart.options.plugins.tooltip = tooltipPlugin(unit);
@@ -534,10 +595,28 @@ async function initStocks() {
   }
 
   const lastDate = (ticker) => data.series[ticker].points.at(-1)[0];
+  const indexData = data.index?.points?.length ? data.index : null;
   const tiles = new Map();
   let selected = order[0];
   let currentRange = DEFAULT_RANGE;
   let chart = null;
+
+  const indexToggle = document.getElementById('imoex-toggle');
+  let showIndex = !!indexData;
+
+  if (indexToggle) {
+    indexToggle.hidden = !indexData;
+    indexToggle.setAttribute('aria-pressed', String(showIndex));
+    indexToggle.addEventListener('click', () => {
+      showIndex = !showIndex;
+      indexToggle.setAttribute('aria-pressed', String(showIndex));
+      if (!chart) return;
+      const index = chart.data.datasets.findIndex((d) => d.id === 'imoex');
+      if (index >= 0) chart.setDatasetVisibility(index, showIndex);
+      chart.options.scales.index.display = showIndex;
+      chart.update();
+    });
+  }
 
   for (const ticker of order) {
     const el = document.createElement('button');
@@ -599,8 +678,20 @@ async function initStocks() {
     valueEl.title = `${pct >= 0 ? '+' : '−'}${num(Math.abs(pct), 1)} % за период`;
     metaEl.textContent = `${selected} · Мосбиржа · ${shortDate(points[0][0])} — ${shortDate(points[points.length - 1][0])}`;
 
-    if (!chart) chart = createDetailChart(canvas, points, { resetButton });
-    else updateDetailChart(chart, points);
+    // Индекс режем по окну выбранной бумаги: иначе его крайние даты растянут ось X.
+    const indexPoints = indexData
+      ? indexData.points.filter(([d]) => d >= points[0][0] && d <= points[points.length - 1][0])
+      : [];
+
+    if (!chart)
+      chart = createDetailChart(canvas, points, {
+        resetButton,
+        indexPoints,
+        indexLabel: indexData?.name,
+        showIndex,
+        priceLabel: series.name,
+      });
+    else updateDetailChart(chart, points, '₽', null, null, null, indexPoints, indexData?.name, series.name);
   };
 
   if (updatedEl && data.updated) updatedEl.textContent = longDate(data.updated);

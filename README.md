@@ -14,7 +14,7 @@
   `scripts/update-pskb.ps1` и пушит `data/pskb.json`.
 - `data/pskb-history.json` — точки по прошлым датам, введённые вручную (на графике — маркеры).
 - `data/stocks.json` — дневные цены закрытия с 2021 года из MOEX ISS
-  (`iss.moex.com/.../candles.json`, режим TQBR).
+  (`iss.moex.com/.../candles.json`, режим TQBR) и индекс МосБиржи (IMOEX) в поле `index`.
 - `.github/workflows/update-rates.yml` — GitHub Action: раз в день (17:40 МСК) заново забирает
   все ряды и коммитит их, если данные изменились. Запуск вручную: вкладка Actions →
   *Обновление данных* → *Run workflow*.

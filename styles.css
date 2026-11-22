@@ -154,6 +154,20 @@ body {
   border-top-color: rgba(255, 255, 255, 0.25);
 }
 
+/* чип индекса МосБиржи — фиолетовый */
+.chip-index .chip-line {
+  border-top-color: #c084fc;
+}
+
+.chip-index[aria-pressed="true"] {
+  border-color: rgba(192, 132, 252, 0.45);
+  background: rgba(192, 132, 252, 0.1);
+}
+
+.chip-index[aria-pressed="false"] .chip-line {
+  border-top-color: rgba(255, 255, 255, 0.25);
+}
+
 .chip-line {
   width: 16px;
   height: 0;
