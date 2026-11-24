@@ -2,6 +2,7 @@
 // Запуск: node scripts/fetch-stocks.mjs
 import { mkdir, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
+import { get } from './http.mjs';
 
 const START = '2021-01-01';
 const OUT_FILE = fileURLToPath(new URL('../data/stocks.json', import.meta.url));
@@ -51,12 +52,8 @@ async function fetchCandles(urlFor) {
     let lastError;
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
-        const res = await fetch(urlFor(start), {
-          headers: { 'User-Agent': 'personal-charts/1.0 (+github actions cron)' },
-          signal: AbortSignal.timeout(30_000),
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        response = await res.json();
+        const { text } = await get(urlFor(start), { timeout: 30_000 });
+        response = JSON.parse(text);
         break;
       } catch (err) {
         lastError = err;

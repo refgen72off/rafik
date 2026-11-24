@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex, nofollow">
   <title>Рафики</title>
-  <link rel="stylesheet" href="styles.css?v=14">
+  <link rel="stylesheet" href="styles.css?v=15">
 </head>
 <body>
   <main class="wrap">
@@ -72,6 +72,34 @@
       </section>
     </div>
 
+    <section class="card dividends" aria-labelledby="dividends-title">
+      <div class="card-head">
+        <div class="card-title">
+          <p class="eyebrow">Дивиденды</p>
+          <h2 id="dividends-title">Самые доходные акции</h2>
+          <p class="meta" id="dividends-meta">загрузка…</p>
+        </div>
+      </div>
+
+      <div class="ranges" id="dividends-ranges" role="group" aria-label="Период"></div>
+
+      <div class="div-table-wrap">
+        <table class="div-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Компания</th>
+              <th>Дивиденды</th>
+              <th>Цена на начало</th>
+              <th>Доходность</th>
+            </tr>
+          </thead>
+          <tbody id="dividends-body"></tbody>
+        </table>
+        <p class="chart-error" id="dividends-error" hidden></p>
+      </div>
+    </section>
+
     <footer class="foot">
       Источники: <a href="https://www.cbr.ru/currency_base/dynamics/" rel="noopener">ЦБ РФ</a> (валюты),
       <a href="https://www.moex.com/" rel="noopener">Мосбиржа</a> (акции).
@@ -83,6 +111,6 @@
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.2.0/dist/chartjs-plugin-zoom.min.js"></script>
-  <script src="app.js?v=16"></script>
+  <script src="app.js?v=17"></script>
 </body>
 </html>

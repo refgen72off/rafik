@@ -2,6 +2,7 @@
 // Запуск: node scripts/fetch-rates.mjs
 import { mkdir, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
+import { get } from './http.mjs';
 
 const START_YEAR = 2016;
 const OUT_FILE = fileURLToPath(new URL('../data/rates.json', import.meta.url));
@@ -27,12 +28,8 @@ async function fetchKeyRate() {
   let lastError;
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      const res = await fetch(KEY_RATE_PAGE(from, to), {
-        headers: { 'User-Agent': 'personal-charts/1.0 (+github actions cron)' },
-        signal: AbortSignal.timeout(45_000),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const html = new TextDecoder('windows-1251').decode(await res.arrayBuffer());
+      const { buffer } = await get(KEY_RATE_PAGE(from, to), { timeout: 45_000 });
+      const html = new TextDecoder('windows-1251').decode(buffer);
 
       const byDate = new Map();
       for (const m of html.matchAll(
@@ -65,12 +62,8 @@ async function fetchYear(id, year) {
   let lastError;
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      const res = await fetch(url, {
-        headers: { 'User-Agent': 'personal-charts/1.0 (+github actions cron)' },
-        signal: AbortSignal.timeout(30_000),
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const xml = new TextDecoder('windows-1251').decode(await res.arrayBuffer());
+      const { buffer } = await get(url, { timeout: 30_000 });
+      const xml = new TextDecoder('windows-1251').decode(buffer);
 
       const points = [];
       for (const m of xml.matchAll(
