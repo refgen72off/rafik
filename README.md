@@ -13,8 +13,6 @@
   поэтому точку дописывает не крон, а задача планировщика `rafik-pskb` (10:00), которая запускает
   `scripts/update-pskb.ps1` и пушит `data/pskb.json`.
 - `data/pskb-history.json` — точки по прошлым датам, введённые вручную (на графике — маркеры).
-- `data/dividends.json` — топ-10 акций MOEX по дивидендной доходности за 1/3/5 лет (таблица внизу
-  страницы). Разовая выгрузка `node scripts/fetch-dividends.mjs`, в ежедневный крон не входит.
 - `data/stocks.json` — дневные цены закрытия с 2021 года из MOEX ISS
   (`iss.moex.com/.../candles.json`, режим TQBR) и индекс МосБиржи (IMOEX) в поле `index`.
 - `.github/workflows/update-rates.yml` — GitHub Action: раз в день (17:40 МСК) заново забирает
@@ -32,7 +30,6 @@ npx serve .                     # страница: http://localhost:3000 (fetch
 node scripts/fetch-rates.mjs    # обновить курсы ЦБ
 node scripts/fetch-pskb.mjs     # обновить курс Примсоцбанка (дописывает точку за сегодня)
 node scripts/fetch-stocks.mjs   # обновить котировки MOEX (~30 тыс. точек, 1–2 минуты)
-node scripts/fetch-dividends.mjs  # пересчитать таблицу дивидендов (~5 минут, разово)
 ```
 
 ## Изменения

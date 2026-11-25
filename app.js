@@ -904,87 +904,12 @@ function initDesk() {
   });
 }
 
-// ---------- таблица дивидендов ----------
-
-const DIVIDEND_WINDOWS = [
-  { id: '1y', label: '1 год' },
-  { id: '3y', label: '3 года' },
-  { id: '5y', label: '5 лет' },
-];
-
-async function initDividends() {
-  const metaEl = document.getElementById('dividends-meta');
-  const rangesEl = document.getElementById('dividends-ranges');
-  const bodyEl = document.getElementById('dividends-body');
-  const errorEl = document.getElementById('dividends-error');
-  if (!bodyEl || !rangesEl) return;
-
-  let data;
-  try {
-    const res = await fetch('data/dividends.json', { cache: 'no-cache' });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    data = await res.json();
-  } catch (err) {
-    metaEl.textContent = 'данные не загрузились';
-    errorEl.hidden = false;
-    errorEl.textContent = `Не удалось загрузить data/dividends.json (${err.message}).`;
-    return;
-  }
-
-  const draw = (periodId) => {
-    const period = data.periods?.[periodId];
-    const items = period?.items ?? [];
-    bodyEl.textContent = '';
-
-    if (!items.length) {
-      errorEl.hidden = false;
-      errorEl.textContent = 'за этот период данных нет';
-      metaEl.textContent = '—';
-      return;
-    }
-    errorEl.hidden = true;
-
-    for (const [i, item] of items.entries()) {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td class="div-rank">${i + 1}</td>
-        <td class="div-name"><span class="div-company">${item.name}</span><span class="div-ticker">${item.ticker}</span></td>
-        <td class="div-num">${priceText(item.divs)} ₽</td>
-        <td class="div-num">${priceText(item.price)} ₽</td>
-        <td class="div-num div-yield">+${num(item.yield, 1)} %</td>
-      `;
-      bodyEl.append(tr);
-    }
-
-    const updated = data.updated ? ` · данные на ${shortDate(data.updated)}` : '';
-    metaEl.textContent = `${shortDate(period.from)} — ${shortDate(period.to)} · дивиденды ÷ цена на начало${updated}`;
-  };
-
-  let current = '1y';
-  for (const w of DIVIDEND_WINDOWS) {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'range';
-    btn.textContent = w.label;
-    btn.dataset.period = w.id;
-    btn.setAttribute('aria-pressed', String(w.id === current));
-    btn.addEventListener('click', () => {
-      current = w.id;
-      for (const other of rangesEl.children) other.setAttribute('aria-pressed', String(other === btn));
-      draw(w.id);
-    });
-    rangesEl.append(btn);
-  }
-
-  draw(current);
-}
-
 // ---------- запуск ----------
 
 initDesk();
 
 // Отрисовка графиков меняет высоту страницы, из-за чего появляется вертикальный
 // скроллбар и «стол» становится уже — пересчитываем раскладку после загрузки данных.
-Promise.allSettled([initCurrency(), initStocks(), initDividends()]).then(() => {
+Promise.allSettled([initCurrency(), initStocks()]).then(() => {
   window.dispatchEvent(new Event('resize'));
 });
